@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -8,8 +8,6 @@ import {
   CreditCard,
   Users,
   RotateCcw,
-  ShieldAlert,
-  BarChart3,
   Sparkles,
   Layers,
   ExternalLink,
@@ -21,67 +19,149 @@ interface SidebarProps {
   className?: string;
 }
 
+type DashboardSectionId = "overview" | "payments" | "refunds" | "customers";
+
+interface NavItem {
+  id: DashboardSectionId | "copilot";
+  name: string;
+  href: string;
+  icon: React.ElementType;
+  highlight?: boolean;
+}
+
+const NAV_ITEMS: NavItem[] = [
+  {
+    id: "overview",
+    name: "Overview",
+    href: "/dashboard#overview",
+    icon: LayoutDashboard,
+  },
+  {
+    id: "payments",
+    name: "Payments",
+    href: "/dashboard#payments",
+    icon: CreditCard,
+  },
+  {
+    id: "refunds",
+    name: "Refunds",
+    href: "/dashboard#refunds",
+    icon: RotateCcw,
+  },
+  {
+    id: "customers",
+    name: "Customers",
+    href: "/dashboard#customers",
+    icon: Users,
+  },
+  {
+    id: "copilot",
+    name: "AI Copilot",
+    href: "/copilot",
+    icon: Sparkles,
+    highlight: true,
+  },
+];
+
 export function Sidebar({ className = "" }: SidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  const navItems = [
-    {
-      name: "Overview",
-      href: "/dashboard",
-      icon: LayoutDashboard,
-      active: pathname === "/dashboard",
-    },
-    {
-      name: "Payments",
-      href: "/dashboard#payments",
-      icon: CreditCard,
-      active: false,
-    },
-    {
-      name: "Customers",
-      href: "/dashboard#customers",
-      icon: Users,
-      active: false,
-    },
-    {
-      name: "Refunds",
-      href: "/dashboard#refunds",
-      icon: RotateCcw,
-      active: false,
-    },
-    {
-      name: "Disputes",
-      href: "/dashboard#disputes",
-      icon: ShieldAlert,
-      active: false,
-    },
-    {
-      name: "Analytics",
-      href: "/dashboard#analytics",
-      icon: BarChart3,
-      active: false,
-    },
-    {
-      name: "AI Copilot",
-      href: "/copilot",
-      icon: Sparkles,
-      active: pathname === "/copilot",
-      highlight: true,
-    },
-  ];
-
-  const handleNavClick = (href: string) => {
-    setMobileOpen(false);
-    // Scroll to hash target on same page
-    if (href.includes("#") && pathname === "/dashboard") {
-      const id = href.split("#")[1];
-      const el = document.getElementById(id);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth" });
+  const [activeSection, setActiveSection] = useState<DashboardSectionId>(() => {
+    if (typeof window !== "undefined") {
+      const hash = window.location.hash.replace("#", "").toLowerCase() as DashboardSectionId;
+      if (["overview", "payments", "refunds", "customers"].includes(hash)) {
+        return hash;
       }
     }
-  };
+    return "overview";
+  });
+
+  // Handle direct navigation scroll on mount (e.g. /dashboard#customers)
+  useEffect(() => {
+    if (typeof window === "undefined" || pathname !== "/dashboard") return;
+
+    const hash = window.location.hash.replace("#", "").toLowerCase() as DashboardSectionId;
+    if (["overview", "payments", "refunds", "customers"].includes(hash)) {
+      const el = document.getElementById(hash);
+      if (el) {
+        setTimeout(() => {
+          el.scrollIntoView({ behavior: "smooth" });
+        }, 150);
+      }
+    }
+  }, [pathname]);
+
+  // Listen to hash changes (e.g. browser forward/back buttons)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const onHashChange = () => {
+      const hash = window.location.hash.replace("#", "").toLowerCase() as DashboardSectionId;
+      if (["overview", "payments", "refunds", "customers"].includes(hash)) {
+        setActiveSection(hash);
+      }
+    };
+
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  // IntersectionObserver to dynamically track visible section during manual scrolling
+  useEffect(() => {
+    if (typeof window === "undefined" || pathname !== "/dashboard") return;
+
+    const sectionIds: DashboardSectionId[] = ["overview", "payments", "refunds", "customers"];
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Pick the intersecting entry with the highest intersection ratio
+        const visibleEntries = entries.filter((e) => e.isIntersecting);
+        if (visibleEntries.length > 0) {
+          // Sort by intersection ratio or proximity to top
+          const topEntry = visibleEntries.sort(
+            (a, b) => b.intersectionRatio - a.intersectionRatio
+          )[0];
+          const id = topEntry.target.id as DashboardSectionId;
+          setActiveSection(id);
+          // Silently update hash in URL without triggering scrolling
+          window.history.replaceState(null, "", `#${id}`);
+        }
+      },
+      {
+        rootMargin: "-15% 0px -50% 0px",
+        threshold: [0.1, 0.25, 0.5],
+      }
+    );
+
+    sectionIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, [pathname]);
+
+  const handleNavClick = useCallback(
+    (e: React.MouseEvent, item: NavItem) => {
+      setMobileOpen(false);
+
+      if (item.id === "copilot") {
+        return; // standard Next.js navigation
+      }
+
+      if (pathname === "/dashboard") {
+        e.preventDefault();
+        const sectionId = item.id as DashboardSectionId;
+        setActiveSection(sectionId);
+        window.history.replaceState(null, "", `#${sectionId}`);
+
+        const el = document.getElementById(sectionId);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth" });
+        }
+      }
+    },
+    [pathname]
+  );
 
   const sidebarContent = (
     <>
@@ -103,6 +183,7 @@ export function Sidebar({ className = "" }: SidebarProps) {
           <button
             onClick={() => setMobileOpen(false)}
             className="ml-auto lg:hidden p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-[#151922] transition-colors"
+            aria-label="Close menu"
           >
             <X className="w-4 h-4" />
           </button>
@@ -113,15 +194,20 @@ export function Sidebar({ className = "" }: SidebarProps) {
           <div className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
             Operations Console
           </div>
-          {navItems.map((item) => {
+          {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
+            const isCopilot = item.id === "copilot";
+            const isActive = isCopilot
+              ? pathname === "/copilot"
+              : pathname === "/dashboard" && activeSection === item.id;
+
             return (
               <Link
-                key={item.name}
+                key={item.id}
                 href={item.href}
-                onClick={() => handleNavClick(item.href)}
+                onClick={(e) => handleNavClick(e, item)}
                 className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-all group ${
-                  item.active
+                  isActive
                     ? "bg-blue-600/10 text-blue-400 border border-blue-500/20"
                     : item.highlight
                     ? "text-blue-300 hover:bg-blue-500/10 hover:text-blue-200"
@@ -131,7 +217,7 @@ export function Sidebar({ className = "" }: SidebarProps) {
                 <div className="flex items-center gap-3">
                   <Icon
                     className={`w-4 h-4 transition-colors ${
-                      item.active
+                      isActive
                         ? "text-blue-400"
                         : item.highlight
                         ? "text-blue-400"
@@ -163,7 +249,7 @@ export function Sidebar({ className = "" }: SidebarProps) {
           </div>
           <div className="flex items-center justify-between text-[11px]">
             <span className="text-zinc-400">AI Reasoning</span>
-            <span className="text-zinc-300 font-mono text-[10px]">Gemini Pro</span>
+            <span className="text-zinc-300 font-mono text-[10px]">Gemini 2.5</span>
           </div>
           <Link
             href="/"

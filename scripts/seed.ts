@@ -45,9 +45,7 @@ function generateEmail(first: string, last: string) {
 async function main() {
   console.log('🌱 Starting seed...');
 
-  // 1. Clear existing data
-  await supabase.from('agent_actions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-  await supabase.from('support_cases').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  // 1. Clear existing base telemetry data (preserving audit logs and support cases)
   await supabase.from('refunds').delete().neq('id', '00000000-0000-0000-0000-000000000000');
   await supabase.from('payments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
   await supabase.from('customers').delete().neq('id', '00000000-0000-0000-0000-000000000000');

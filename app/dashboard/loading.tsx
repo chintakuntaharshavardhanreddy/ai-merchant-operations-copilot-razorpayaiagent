@@ -55,6 +55,9 @@ export default function DashboardLoading() {
 
           {/* Operational Signals */}
           <div className="h-40 rounded-xl bg-[#0D1017] border border-[#1A2233] animate-pulse" />
+
+          {/* Customers Section Skeleton */}
+          <div className="h-64 rounded-xl bg-[#0D1017] border border-[#1A2233] animate-pulse" />
         </main>
       </div>
     </div>

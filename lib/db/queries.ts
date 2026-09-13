@@ -56,6 +56,7 @@ export interface CustomerRecord {
   id: string;
   name: string;
   email: string;
+  created_at?: string;
 }
 
 export interface RefundRecord {
@@ -1147,3 +1148,118 @@ export async function getRecentAgentActions(
     executed_at: d.executed_at || null,
   }));
 }
+
+// ===== Customer Operational Queries =====
+
+export interface CustomerOperationalSummary {
+  id: string;
+  name: string;
+  email: string;
+  maskedEmail: string;
+  totalTransactions: number;
+  successfulTransactions: number;
+  failedTransactions: number;
+  totalVolume: number;
+  failedVolume: number;
+  latestStatus: string;
+  latestPaymentDate: string;
+  riskSignal: "HIGH_FRICTION" | "HIGH_VALUE_RISK" | "STABLE";
+  topFailureReason: string | null;
+}
+
+/**
+ * getCustomers()
+ * Fetches all customers and joins with payment telemetry to produce
+ * operationally actionable customer summaries prioritized by risk/friction.
+ */
+export async function getCustomers(): Promise<CustomerOperationalSummary[]> {
+  const customers = await getAllCustomers();
+  const payments = await getAllPayments();
+
+  const payMap = new Map<string, PaymentRecord[]>();
+  for (const p of payments) {
+    if (!p.customer_id) continue;
+    if (!payMap.has(p.customer_id)) payMap.set(p.customer_id, []);
+    payMap.get(p.customer_id)!.push(p);
+  }
+
+  const summaries: CustomerOperationalSummary[] = [];
+
+  for (const c of customers) {
+    const custPayments = payMap.get(c.id) || [];
+    const totalTransactions = custPayments.length;
+    const successfulPayments = custPayments.filter((p) => p.status === "SUCCESS");
+    const failedPayments = custPayments.filter((p) => p.status === "FAILED");
+    const totalVolume = custPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+    const failedVolume = failedPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+
+    // Sort by created_at descending to find latest
+    const sortedPayments = [...custPayments].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+    const latestPayment = sortedPayments[0];
+    const latestStatus = latestPayment ? latestPayment.status : "NONE";
+    const latestPaymentDate = latestPayment
+      ? latestPayment.created_at
+      : c.created_at || new Date().toISOString();
+
+    // Determine failure reasons
+    const reasonsMap: Record<string, number> = {};
+    for (const fp of failedPayments) {
+      if (fp.failure_reason) {
+        reasonsMap[fp.failure_reason] = (reasonsMap[fp.failure_reason] || 0) + 1;
+      }
+    }
+    const topReasonEntry = Object.entries(reasonsMap).sort((a, b) => b[1] - a[1])[0];
+    const topFailureReason = topReasonEntry ? topReasonEntry[0] : null;
+
+    // Risk signal classification
+    let riskSignal: "HIGH_FRICTION" | "HIGH_VALUE_RISK" | "STABLE" = "STABLE";
+    if (failedPayments.length >= 2) {
+      riskSignal = "HIGH_FRICTION";
+    } else if (failedVolume >= 10000) {
+      riskSignal = "HIGH_VALUE_RISK";
+    }
+
+    const parts = c.email.split("@");
+    const maskedUser = parts[0].slice(0, 2) + "***";
+    const maskedEmail = `${maskedUser}@${parts[1] || "domain.com"}`;
+
+    summaries.push({
+      id: c.id,
+      name: c.name,
+      email: c.email,
+      maskedEmail,
+      totalTransactions,
+      successfulTransactions: successfulPayments.length,
+      failedTransactions: failedPayments.length,
+      totalVolume: Math.round(totalVolume),
+      failedVolume: Math.round(failedVolume),
+      latestStatus,
+      latestPaymentDate,
+      riskSignal,
+      topFailureReason,
+    });
+  }
+
+  // Prioritize operational urgency:
+  // 1. High friction (sorted by failed transactions desc)
+  // 2. High value risk (sorted by failed volume desc)
+  // 3. Stable (sorted by total volume desc)
+  summaries.sort((a, b) => {
+    const priority = (s: CustomerOperationalSummary) => {
+      if (s.riskSignal === "HIGH_FRICTION") return 3;
+      if (s.riskSignal === "HIGH_VALUE_RISK") return 2;
+      return 1;
+    };
+    const pDiff = priority(b) - priority(a);
+    if (pDiff !== 0) return pDiff;
+    if (b.failedTransactions !== a.failedTransactions) {
+      return b.failedTransactions - a.failedTransactions;
+    }
+    return b.totalVolume - a.totalVolume;
+  });
+
+  return summaries;
+}
+
