@@ -16,62 +16,98 @@ interface RevenueChartProps {
 }
 
 export function RevenueChart({ data }: RevenueChartProps) {
-  const chartData = data.length > 0
-    ? data.map((d) => ({ time: d.hour, revenue: d.revenue, failedVolume: d.failedVolume }))
-    : [{ time: "No data", revenue: 0, failedVolume: 0 }];
+  if (!data || data.length === 0) {
+    return (
+      <div className="w-full h-64 flex flex-col items-center justify-center rounded-xl bg-zinc-900/20 border border-zinc-800/40 text-center px-4">
+        <p className="text-sm font-medium text-zinc-400">No telemetry recorded for this timeframe</p>
+        <p className="text-xs text-zinc-500 mt-1">Telemetry will appear as transactions are processed.</p>
+      </div>
+    );
+  }
+
+  const chartData = data.map((d) => ({
+    time: d.hour,
+    revenue: d.revenue,
+    failedVolume: d.failedVolume,
+  }));
+
+  const formatCurrency = (val: number) => {
+    if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
+    if (val >= 1000) return `₹${Math.round(val / 1000)}k`;
+    return `₹${val}`;
+  };
 
   return (
     <div className="w-full h-64 select-none">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={chartData}
-          margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+          margin={{ top: 12, right: 8, left: -16, bottom: 0 }}
         >
           <defs>
-            <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.35} />
-              <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.0} />
+            <linearGradient id="settledGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.28} />
+              <stop offset="90%" stopColor="#3b82f6" stopOpacity={0.0} />
             </linearGradient>
             <linearGradient id="failedGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#F43F5E" stopOpacity={0.25} />
-              <stop offset="95%" stopColor="#F43F5E" stopOpacity={0.0} />
+              <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.2} />
+              <stop offset="90%" stopColor="#f43f5e" stopOpacity={0.0} />
             </linearGradient>
           </defs>
           <CartesianGrid
-            strokeDasharray="3 3"
-            stroke="#1C2333"
+            strokeDasharray="2 4"
+            stroke="rgba(255, 255, 255, 0.05)"
             vertical={false}
           />
           <XAxis
             dataKey="time"
-            stroke="#525E75"
+            stroke="#71717a"
             fontSize={11}
             tickLine={false}
-            axisLine={{ stroke: "#1C2333" }}
+            axisLine={{ stroke: "rgba(255, 255, 255, 0.08)" }}
+            dy={4}
           />
           <YAxis
-            stroke="#525E75"
+            stroke="#71717a"
             fontSize={11}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(value) => `₹${value / 1000}k`}
+            tickFormatter={formatCurrency}
           />
           <Tooltip
             content={({ active, payload, label }) => {
               if (active && payload && payload.length) {
+                const settled = Number(payload[0]?.value || 0);
+                const failed = Number(payload[1]?.value || 0);
+                const total = settled + failed;
+                const failureRate = total > 0 ? ((failed / total) * 100).toFixed(1) : "0";
+
                 return (
-                  <div className="bg-[#0C0F17] border border-[#232C3F] rounded-lg p-3 shadow-xl text-xs space-y-1">
-                    <div className="font-medium text-zinc-300 mb-1">{label}</div>
-                    <div className="flex items-center gap-2 text-blue-400 font-mono">
-                      <span className="w-2 h-2 rounded-full bg-blue-500" />
-                      <span>Settled: ₹{payload[0]?.value?.toLocaleString("en-IN")}</span>
+                  <div className="rounded-xl border border-zinc-700/60 bg-zinc-900/95 backdrop-blur-md p-3.5 shadow-2xl text-xs space-y-2 min-w-[170px]">
+                    <div className="font-medium text-zinc-300 border-b border-zinc-800/80 pb-1.5 flex items-center justify-between">
+                      <span>{label}</span>
+                      {total > 0 && (
+                        <span className="text-[10px] font-mono text-zinc-500">
+                          {failureRate}% fail rate
+                        </span>
+                      )}
                     </div>
-                    {payload[1] && (
-                      <div className="flex items-center gap-2 text-rose-400 font-mono">
-                        <span className="w-2 h-2 rounded-full bg-rose-500" />
-                        <span>Failed: ₹{payload[1]?.value?.toLocaleString("en-IN")}</span>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-3 text-blue-400 font-mono">
+                        <span className="flex items-center gap-1.5 text-zinc-400">
+                          <span className="w-2 h-2 rounded-full bg-blue-500" />
+                          Settled
+                        </span>
+                        <span className="font-semibold">₹{settled.toLocaleString("en-IN")}</span>
                       </div>
-                    )}
+                      <div className="flex items-center justify-between gap-3 text-rose-400 font-mono">
+                        <span className="flex items-center gap-1.5 text-zinc-400">
+                          <span className="w-2 h-2 rounded-full bg-rose-500" />
+                          Failed
+                        </span>
+                        <span className="font-semibold">₹{failed.toLocaleString("en-IN")}</span>
+                      </div>
+                    </div>
                   </div>
                 );
               }
@@ -81,19 +117,21 @@ export function RevenueChart({ data }: RevenueChartProps) {
           <Area
             type="monotone"
             dataKey="revenue"
-            stroke="#3B82F6"
+            stroke="#3b82f6"
             strokeWidth={2}
             fillOpacity={1}
-            fill="url(#revenueGradient)"
+            fill="url(#settledGradient)"
+            activeDot={{ r: 4, stroke: "#60a5fa", strokeWidth: 2, fill: "#1e3a8a" }}
           />
           <Area
             type="monotone"
             dataKey="failedVolume"
-            stroke="#F43F5E"
-            strokeWidth={1.5}
-            strokeDasharray="4 4"
+            stroke="#f43f5e"
+            strokeWidth={1.75}
+            strokeDasharray="4 3"
             fillOpacity={1}
             fill="url(#failedGradient)"
+            activeDot={{ r: 4, stroke: "#fb7185", strokeWidth: 2, fill: "#881337" }}
           />
         </AreaChart>
       </ResponsiveContainer>

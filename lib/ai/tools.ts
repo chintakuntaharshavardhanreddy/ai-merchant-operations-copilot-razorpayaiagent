@@ -48,7 +48,7 @@ export function createMerchantTools(
           timestamp: t0,
           durationMs: Date.now() - t0,
           success: true,
-          summary: `Revenue: ?${(metrics.totalRevenue / 100000).toFixed(1)}L, Success Rate: ${metrics.successRate}%, Failures: ${metrics.failedCount}`,
+          summary: `Revenue: ₹${(metrics.totalRevenue / 100000).toFixed(1)}L, Success Rate: ${metrics.successRate}%, Failures: ${metrics.failedCount}`,
         });
         return metrics;
       },
@@ -70,7 +70,7 @@ export function createMerchantTools(
           timestamp: t0,
           durationMs: Date.now() - t0,
           success: true,
-          summary: `Last 24h: ?${(trend.last24hRevenue / 100000).toFixed(1)}L vs Prior 24h: ?${(trend.prior24hRevenue / 100000).toFixed(1)}L (${trend.percentageChange}%)`,
+          summary: `Last 24h: ₹${(trend.last24hRevenue / 100000).toFixed(1)}L vs Prior 24h: ₹${(trend.prior24hRevenue / 100000).toFixed(1)}L (${trend.percentageChange}%)`,
         });
         return trend;
       },
@@ -167,7 +167,7 @@ export function createMerchantTools(
           timestamp: t0,
           durationMs: Date.now() - t0,
           success: true,
-          summary: `${analysis.totalFailedCount} failures (?${analysis.totalFailedAmount.toLocaleString("en-IN")}), ${analysis.highValueFailedPayments.length} high-value drops`,
+          summary: `${analysis.totalFailedCount} failures (₹${analysis.totalFailedAmount.toLocaleString("en-IN")}), ${analysis.highValueFailedPayments.length} high-value drops`,
         });
         return analysis;
       },
@@ -220,7 +220,7 @@ export function createMerchantTools(
           timestamp: t0,
           durationMs: Date.now() - t0,
           success: true,
-          summary: `${refunds.totalRefundCount} refunds (?${refunds.totalRefundAmount.toLocaleString("en-IN")}), ${refunds.pendingRefundsCount} pending`,
+          summary: `${refunds.totalRefundCount} refunds (₹${refunds.totalRefundAmount.toLocaleString("en-IN")}), ${refunds.pendingRefundsCount} pending`,
         });
         return refunds;
       },
@@ -321,7 +321,7 @@ export function createMerchantTools(
           timestamp: t0,
           durationMs: Date.now() - t0,
           success: true,
-          summary: `Proposed recovery plan: ${customer_count} customers (?${estimated_recoverable_amount.toLocaleString("en-IN")}) - PENDING APPROVAL`,
+          summary: `Proposed recovery plan: ${customer_count} customers (₹${estimated_recoverable_amount.toLocaleString("en-IN")}) - PENDING APPROVAL`,
         });
 
         return {
@@ -330,7 +330,7 @@ export function createMerchantTools(
           title: action.title,
           description: action.description,
           estimated_recoverable_amount,
-          policy_basis: "Merchant Support SOP � 2 (Customer Recovery Workflow)",
+          policy_basis: "Merchant Support SOP § 2 (Customer Recovery Workflow)",
           requires_human_approval: true,
           notice: "Action proposal created. Awaiting merchant operator approval before execution.",
         };
@@ -424,8 +424,8 @@ export function createMerchantTools(
 
         const action = await createActionProposal({
           actionType: "PREPARE_REFUND",
-          title: `Prepare refund for payment ${payment_id} (?${amount.toLocaleString("en-IN")})`,
-          description: `Refund request: ?${amount.toLocaleString("en-IN")} for payment ${payment_id}. Reason: ${reason}. Policy basis: ${policy_basis}`,
+          title: `Prepare refund for payment ${payment_id} (₹${amount.toLocaleString("en-IN")})`,
+          description: `Refund request: ₹${amount.toLocaleString("en-IN")} for payment ${payment_id}. Reason: ${reason}. Policy basis: ${policy_basis}`,
           targetId: payment_id,
           parameters: {
             paymentId: payment_id,
@@ -446,7 +446,7 @@ export function createMerchantTools(
           timestamp: t0,
           durationMs: Date.now() - t0,
           success: true,
-          summary: `Proposed refund: ${payment_id} (?${amount.toLocaleString("en-IN")}) - PENDING APPROVAL`,
+          summary: `Proposed refund: ${payment_id} (₹${amount.toLocaleString("en-IN")}) - PENDING APPROVAL`,
         });
 
         return {

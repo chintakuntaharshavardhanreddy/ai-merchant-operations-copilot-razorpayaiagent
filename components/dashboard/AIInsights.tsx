@@ -8,8 +8,6 @@ import {
   Database,
   CheckCircle,
 } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
 import type { OperationalSignal } from "@/lib/db/queries";
 
 interface AIInsightsProps {
@@ -29,14 +27,14 @@ function getSignalIcon(category: string) {
   }
 }
 
-function getSignalBadge(severity: string): "error" | "warning" | "neutral" {
+function getSignalBadgeClass(severity: string): string {
   switch (severity) {
     case "high":
-      return "error";
+      return "text-rose-400 bg-rose-500/10 border-rose-500/20";
     case "medium":
-      return "warning";
+      return "text-amber-400 bg-amber-500/10 border-amber-500/20";
     default:
-      return "neutral";
+      return "text-blue-400 bg-blue-500/10 border-blue-500/20";
   }
 }
 
@@ -44,73 +42,76 @@ export function AIInsights({ signals = [] }: AIInsightsProps) {
   const hasSignals = signals.length > 0;
 
   return (
-    <Card className="bg-[#0D1017]">
-      <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-[#1A2233] gap-2">
+    <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/40 p-5 sm:p-6 backdrop-blur-sm space-y-5">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-zinc-800/60 gap-3">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-base font-semibold text-zinc-100 tracking-tight">
+              Operational Signals & Anomaly Detection
+            </h2>
             <Sparkles className="w-4 h-4 text-blue-400" />
-            <CardTitle>Operational Signals & Insights</CardTitle>
-            <Badge variant="ai" size="sm">
-              Data-Driven
-            </Badge>
           </div>
-          <CardDescription>
-            Deterministic operational anomaly detection and payment performance alerts
-          </CardDescription>
+          <p className="text-xs text-zinc-400 mt-0.5">
+            Automated anomaly detection across telemetry benchmarks, authorization drops, and repeat friction
+          </p>
         </div>
 
         {/* Status Indicator */}
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#161B26] border border-[#232B3D] text-[11px] text-zinc-400 self-start sm:self-auto">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-950/60 border border-zinc-800/80 text-[11px] text-zinc-400 font-mono self-start sm:self-auto">
           <Database className="w-3.5 h-3.5 text-blue-400" />
-          <span>{hasSignals ? `${signals.length} Active Signals` : "All Rails Normal"}</span>
+          <span>{hasSignals ? `${signals.length} Active Signals Detected` : "Telemetry Normal"}</span>
         </div>
-      </CardHeader>
+      </div>
 
-      <div className="pt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Signals Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {!hasSignals ? (
-          <div className="col-span-full flex flex-col items-center justify-center p-8 bg-[#11151F] border border-[#1E2638] rounded-xl text-center space-y-2">
+          <div className="col-span-full flex flex-col items-center justify-center p-12 bg-zinc-950/30 border border-zinc-800/40 rounded-xl text-center space-y-2">
             <CheckCircle className="w-8 h-8 text-emerald-400" />
             <h4 className="text-sm font-semibold text-zinc-200">No Operational Anomalies Detected</h4>
-            <p className="text-xs text-zinc-400 max-w-md">
-              Payment success rates and transaction volumes across all rails are currently operating within expected thresholds. Connect Supabase and run seed data to explore telemetry signals.
+            <p className="text-xs text-zinc-500 max-w-md">
+              Payment success rates and transaction volumes across all rails are currently operating within expected thresholds.
             </p>
           </div>
         ) : (
           signals.map((signal) => {
             const Icon = getSignalIcon(signal.category);
-            const badgeVariant = getSignalBadge(signal.severity);
+            const badgeClass = getSignalBadgeClass(signal.severity);
             const actionHref = `/copilot?q=${encodeURIComponent(signal.title)}`;
 
             return (
               <div
                 key={signal.id}
-                className="p-4 rounded-xl bg-[#11151F] border border-[#1E2638] flex flex-col justify-between hover:border-[#2C384F] transition-all space-y-3"
+                className="rounded-xl bg-zinc-950/40 border border-zinc-800/60 p-4 flex flex-col justify-between hover:border-zinc-700/80 transition-all space-y-3.5"
               >
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">
                       {signal.category}
                     </span>
-                    <Badge variant={badgeVariant} size="sm">
+                    <span
+                      className={`text-[10px] font-medium font-mono px-2 py-0.5 rounded-full border ${badgeClass}`}
+                    >
                       {signal.severity.toUpperCase()}
-                    </Badge>
+                    </span>
                   </div>
 
                   <div className="flex items-start gap-2.5">
-                    <div className="p-1.5 rounded-md bg-[#181F2E] border border-[#222B3F] text-zinc-300 shrink-0 mt-0.5">
+                    <div className="p-1.5 rounded-lg bg-zinc-900/80 border border-zinc-800/80 text-zinc-300 shrink-0 mt-0.5">
                       <Icon className="w-3.5 h-3.5 text-zinc-300" />
                     </div>
-                    <h4 className="text-xs font-semibold text-zinc-100 leading-snug">
+                    <h3 className="text-xs font-semibold text-zinc-100 leading-snug">
                       {signal.title}
-                    </h4>
+                    </h3>
                   </div>
 
                   <p className="text-xs text-zinc-400 leading-relaxed">
                     {signal.description}
                   </p>
 
-                  <div className="p-2.5 rounded-lg bg-[#0C0F16] border border-[#1A2233] space-y-1">
-                    <div className="text-[11px] font-medium text-amber-300/90 font-mono">
+                  <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/70 space-y-1">
+                    <div className="text-[11px] font-medium text-amber-300 font-mono">
                       Impact: {signal.impact}
                     </div>
                     <div className="text-[11px] text-zinc-400">
@@ -119,7 +120,7 @@ export function AIInsights({ signals = [] }: AIInsightsProps) {
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-[#182030]">
+                <div className="pt-2 border-t border-zinc-800/50">
                   <Link
                     href={actionHref}
                     className="flex items-center justify-between text-xs font-medium text-blue-400 hover:text-blue-300 transition-colors group"
@@ -133,6 +134,6 @@ export function AIInsights({ signals = [] }: AIInsightsProps) {
           })
         )}
       </div>
-    </Card>
+    </div>
   );
 }
