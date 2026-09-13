@@ -6,7 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:seed": "tsx scripts/seed.ts",
+    "rag:ingest": "tsx scripts/ingest.ts",
+    "rag:reset": "tsx scripts/ingest.ts --reset",
+    "rag:diag": "tsx scripts/diagnose-rag.ts",
+    "test:search": "tsx scripts/test-search.ts",
+    "test:rag": "tsx scripts/test-rag-answers.ts",
+    "test:q1": "tsx scripts/test-q1.ts",
+    "check:model": "tsx scripts/check-model-quota.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.65",
@@ -16,16 +24,19 @@
     "next": "16.3.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "recharts": "^3.10.1"
+    "recharts": "^3.10.1",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
     "tailwindcss": "^4",
+    "tsx": "^4.23.13",
     "typescript": "^5"
   }
 }

@@ -8,52 +8,89 @@ import {
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import type { DashboardMetrics } from "@/lib/db/queries";
 
-export function KPISection() {
+/**
+ * Formats a number into Indian lakhs notation.
+ * e.g. 1240290 → "₹12.4L"
+ */
+function formatLakhs(n: number): string {
+  const lakhs = n / 100000;
+  if (lakhs >= 10) return `₹${Math.round(lakhs)}L`;
+  return `₹${lakhs.toFixed(1)}L`;
+}
+
+interface KPISectionProps {
+  metrics: DashboardMetrics;
+}
+
+export function KPISection({ metrics }: KPISectionProps) {
+  const successRateHealthy = metrics.successRate >= 95;
+  const successRateWarning = metrics.successRate >= 90 && metrics.successRate < 95;
+
   const kpis = [
     {
       title: "Total Revenue",
-      value: "₹12.4L",
-      subtitle: "vs ₹11.2L last 7 days",
-      trend: "+10.7%",
-      trendUp: true,
+      value: formatLakhs(metrics.totalRevenue),
+      subtitle: `${metrics.totalPayments.toLocaleString("en-IN")} transactions`,
+      trend: metrics.totalRevenue > 0 ? "Live" : "No data",
+      trendUp: metrics.totalRevenue > 0,
       icon: IndianRupee,
-      badge: "Healthy",
-      badgeVariant: "success" as const,
-      description: "Net settled & authorized",
+      badge: metrics.totalRevenue > 0 ? "Healthy" : "No Data",
+      badgeVariant: (metrics.totalRevenue > 0 ? "success" : "neutral") as
+        | "success"
+        | "neutral",
     },
     {
       title: "Payment Success Rate",
-      value: "94.2%",
+      value: `${metrics.successRate}%`,
       subtitle: "Target: 95.0%",
-      trend: "-0.8%",
-      trendUp: false,
+      trend: successRateHealthy
+        ? "On Target"
+        : `${(95 - metrics.successRate).toFixed(1)}% below`,
+      trendUp: successRateHealthy,
       icon: CheckCircle2,
-      badge: "Benchmark 95%",
-      badgeVariant: "warning" as const,
-      description: "Across all checkout rails",
+      badge: successRateHealthy
+        ? "On Target"
+        : successRateWarning
+        ? "Below Benchmark"
+        : "Critical",
+      badgeVariant: (successRateHealthy
+        ? "success"
+        : successRateWarning
+        ? "warning"
+        : "error") as "success" | "warning" | "error",
     },
     {
       title: "Failed Payments",
-      value: "312",
-      subtitle: "Out of 5,380 attempts",
-      trend: "+14.2%",
-      trendUp: false, // more failures is negative
+      value: metrics.failedCount.toLocaleString("en-IN"),
+      subtitle: `Out of ${metrics.totalPayments.toLocaleString("en-IN")} attempts`,
+      trend:
+        metrics.totalPayments > 0
+          ? `${((metrics.failedCount / metrics.totalPayments) * 100).toFixed(1)}% fail rate`
+          : "No data",
+      trendUp: false,
       icon: XCircle,
-      badge: "Investigation Needed",
-      badgeVariant: "error" as const,
-      description: "UPI & Bank downtime driven",
+      badge:
+        metrics.failedCount > 50 ? "Investigation Needed" : "Within Range",
+      badgeVariant: (metrics.failedCount > 50 ? "error" : "success") as
+        | "error"
+        | "success",
     },
     {
       title: "Revenue at Risk",
-      value: "₹1.84L",
-      subtitle: "Recoverable: ~₹1.12L",
-      trend: "27 Users",
+      value: formatLakhs(metrics.revenueAtRisk),
+      subtitle: `${metrics.repeatFailureCustomers} repeat-fail customers`,
+      trend: `${metrics.repeatFailureCustomers} Users`,
       trendUp: false,
       icon: AlertTriangle,
-      badge: "Action Required",
-      badgeVariant: "warning" as const,
-      description: "Drop-offs & high-intent retry",
+      badge:
+        metrics.repeatFailureCustomers > 10
+          ? "Action Required"
+          : "Monitoring",
+      badgeVariant: (metrics.repeatFailureCustomers > 10
+        ? "warning"
+        : "neutral") as "warning" | "neutral",
     },
   ];
 
@@ -95,7 +132,7 @@ export function KPISection() {
                     {kpi.trend}
                   </span>
                 )}
-                <span className="text-zinc-400 truncate max-w-[100px]">
+                <span className="text-zinc-400 truncate max-w-[120px]">
                   {kpi.subtitle}
                 </span>
               </div>

@@ -8,55 +8,36 @@ import {
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import type { PaymentMethodHealth as MethodHealth } from "@/lib/db/queries";
 
-export function PaymentHealth() {
-  const paymentMethods = [
-    {
-      name: "UPI",
-      icon: Smartphone,
-      share: "58% of volume",
-      successRate: "91.8%",
-      latency: "3.8s",
-      status: "Degraded",
-      statusVariant: "warning" as const,
-      statusDesc: "SBI & HDFC gateway response delay",
-      progress: 91.8,
-    },
-    {
-      name: "Cards",
-      icon: CreditCard,
-      share: "26% of volume",
-      successRate: "96.1%",
-      latency: "1.2s",
-      status: "Optimal",
-      statusVariant: "success" as const,
-      statusDesc: "Visa/Mastercard 3DS2 running smooth",
-      progress: 96.1,
-    },
-    {
-      name: "Netbanking",
-      icon: Landmark,
-      share: "11% of volume",
-      successRate: "95.4%",
-      latency: "2.1s",
-      status: "Healthy",
-      statusVariant: "success" as const,
-      statusDesc: "Normal bank router operations",
-      progress: 95.4,
-    },
-    {
-      name: "Wallets",
-      icon: Wallet,
-      share: "5% of volume",
-      successRate: "98.2%",
-      latency: "0.8s",
-      status: "Optimal",
-      statusVariant: "success" as const,
-      statusDesc: "Instant tokenized settlements",
-      progress: 98.2,
-    },
-  ];
+const methodMeta: Record<
+  string,
+  {
+    icon: typeof Smartphone;
+    label: string;
+  }
+> = {
+  UPI: { icon: Smartphone, label: "UPI" },
+  CARD: { icon: CreditCard, label: "Cards" },
+  NETBANKING: { icon: Landmark, label: "Netbanking" },
+  WALLET: { icon: Wallet, label: "Wallets" },
+};
 
+function getStatus(rate: number): {
+  label: string;
+  variant: "success" | "warning" | "error";
+} {
+  if (rate >= 96) return { label: "Optimal", variant: "success" };
+  if (rate >= 92) return { label: "Healthy", variant: "success" };
+  if (rate >= 85) return { label: "Degraded", variant: "warning" };
+  return { label: "Critical", variant: "error" };
+}
+
+interface PaymentHealthProps {
+  healthData: MethodHealth[];
+}
+
+export function PaymentHealth({ healthData }: PaymentHealthProps) {
   return (
     <Card className="bg-[#0D1017]">
       <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-[#1A2233]">
@@ -66,20 +47,31 @@ export function PaymentHealth() {
             <Activity className="w-4 h-4 text-emerald-400" />
           </div>
           <CardDescription>
-            Live availability and latency metrics across major payment methods
+            Live availability and failure metrics across major payment methods
           </CardDescription>
         </div>
         <Badge variant="neutral" size="sm">
-          Updated 1m ago
+          {healthData.length > 0 ? "Supabase" : "No Data"}
         </Badge>
       </CardHeader>
 
       <div className="pt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {paymentMethods.map((method) => {
-          const Icon = method.icon;
+        {healthData.length === 0 && (
+          <div className="col-span-full text-center text-zinc-400 text-sm py-8">
+            No payment data available. Connect Supabase and seed the database.
+          </div>
+        )}
+        {healthData.map((method) => {
+          const meta = methodMeta[method.method] || {
+            icon: CreditCard,
+            label: method.method,
+          };
+          const Icon = meta.icon;
+          const status = getStatus(method.successRate);
+
           return (
             <div
-              key={method.name}
+              key={method.method}
               className="p-4 rounded-xl bg-[#11151F] border border-[#1E2638] space-y-3 hover:border-[#2C384F] transition-all"
             >
               <div className="flex items-start justify-between">
@@ -89,15 +81,15 @@ export function PaymentHealth() {
                   </div>
                   <div>
                     <h4 className="text-sm font-semibold text-zinc-100">
-                      {method.name}
+                      {meta.label}
                     </h4>
                     <span className="text-[11px] text-zinc-400">
-                      {method.share}
+                      {method.share}% of volume
                     </span>
                   </div>
                 </div>
-                <Badge variant={method.statusVariant} size="sm" dot>
-                  {method.status}
+                <Badge variant={status.variant} size="sm" dot>
+                  {status.label}
                 </Badge>
               </div>
 
@@ -106,33 +98,37 @@ export function PaymentHealth() {
                 <div className="flex justify-between text-xs">
                   <span className="text-zinc-400">Success Rate</span>
                   <span className="font-mono font-semibold text-zinc-100">
-                    {method.successRate}
+                    {method.successRate}%
                   </span>
                 </div>
                 <div className="w-full h-1.5 bg-[#1C2333] rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full ${
-                      method.status === "Degraded"
+                      status.variant === "warning" || status.variant === "error"
                         ? "bg-amber-400"
                         : "bg-emerald-400"
                     }`}
-                    style={{ width: `${method.progress}%` }}
+                    style={{ width: `${Math.min(method.successRate, 100)}%` }}
                   />
                 </div>
               </div>
 
-              {/* Latency & Root Cause Note */}
+              {/* Failures & Root Cause Note */}
               <div className="pt-2 border-t border-[#192131] space-y-1 text-[11px]">
                 <div className="flex items-center justify-between text-zinc-400">
                   <span className="flex items-center gap-1">
                     <Clock className="w-3 h-3 text-zinc-400" />
-                    Latency
+                    Failed
                   </span>
-                  <span className="font-mono text-zinc-300">{method.latency}</span>
+                  <span className="font-mono text-zinc-300">
+                    {method.failedCount.toLocaleString("en-IN")}
+                  </span>
                 </div>
-                <p className="text-zinc-400 text-[10px] leading-tight line-clamp-1 pt-0.5">
-                  {method.statusDesc}
-                </p>
+                {method.topFailureReason && (
+                  <p className="text-zinc-400 text-[10px] leading-tight line-clamp-1 pt-0.5">
+                    Top cause: {method.topFailureReason}
+                  </p>
+                )}
               </div>
             </div>
           );

@@ -141,7 +141,21 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 ```
 > Note: Only Google Gemini is supported. Never configure or use OpenAI keys.
 
-### 3. Run Development Server
+### 3. Supabase Database Setup & Seeding (Phase 2)
+
+#### Option A: Direct SQL via Supabase Dashboard (Recommended)
+1. Open your [Supabase Project Dashboard](https://supabase.com/dashboard).
+2. Navigate to the **SQL Editor**.
+3. Copy and run [`supabase/schema.sql`](supabase/schema.sql) to create the 6 operational tables, indexes, and RLS policies.
+4. Copy and run [`supabase/seed.sql`](supabase/seed.sql) to seed 550+ payments, 120 customers, 55 refunds, and 12 support cases with discoverable operational patterns (UPI anomalies, repeat customer failures, high-value drop-offs).
+
+#### Option B: TypeScript Seeding Script
+Once `.env.local` contains valid Supabase credentials:
+```bash
+npm run db:seed
+```
+
+### 4. Run Development Server
 ```bash
 npm run dev
 ```

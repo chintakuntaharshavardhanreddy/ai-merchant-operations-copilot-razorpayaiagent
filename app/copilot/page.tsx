@@ -2,15 +2,20 @@ import Link from "next/link";
 import { ArrowLeft, Sparkles, ShieldCheck } from "lucide-react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { Badge } from "@/components/ui/Badge";
-import { ChatInterface } from "@/components/copilot/ChatInterface";
-import { AIActivityPanel } from "@/components/copilot/AIActivityPanel";
-import { AgenticActionCard } from "@/components/copilot/AgenticActionCard";
+import { CopilotWorkbench } from "@/components/copilot/CopilotWorkbench";
 
-export default function CopilotPage() {
+interface CopilotPageProps {
+  searchParams: Promise<{ q?: string }>;
+}
+
+export default async function CopilotPage({ searchParams }: CopilotPageProps) {
+  const params = await searchParams;
+  const initialQuery = params.q || null;
+
   return (
     <div className="flex h-screen overflow-hidden bg-[#090A0F]">
-      {/* Navigation Sidebar */}
-      <Sidebar />
+      {/* Navigation Sidebar — hidden on mobile */}
+      <Sidebar className="hidden lg:flex" />
 
       {/* Main Copilot Workbench Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -30,7 +35,7 @@ export default function CopilotPage() {
                   AI Merchant Operations Copilot
                 </h1>
                 <Badge variant="success" size="sm" dot>
-                  AI Online
+                  RAG Online
                 </Badge>
               </div>
               <p className="text-xs text-zinc-400 hidden sm:block">
@@ -55,25 +60,7 @@ export default function CopilotPage() {
 
         {/* 2-Column Responsive Copilot Layout */}
         <main className="flex-1 overflow-y-auto p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start h-full">
-            {/* Primary Chat Surface (8 cols on large screens) */}
-            <div className="lg:col-span-8 flex flex-col h-full">
-              <ChatInterface />
-            </div>
-
-            {/* Right Panel: Agentic Action & Execution Trace (4 cols on large screens) */}
-            <div className="lg:col-span-4 space-y-5">
-              {/* Agentic Human-in-the-loop Action Card */}
-              <section aria-label="AI Proposed Action">
-                <AgenticActionCard />
-              </section>
-
-              {/* Live AI Activity & Function Trace */}
-              <section aria-label="AI Activity Trace and Tools">
-                <AIActivityPanel />
-              </section>
-            </div>
-          </div>
+          <CopilotWorkbench initialQuery={initialQuery} />
         </main>
       </div>
     </div>

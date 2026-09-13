@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -12,6 +13,8 @@ import {
   Sparkles,
   Layers,
   ExternalLink,
+  Menu,
+  X,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -20,6 +23,7 @@ interface SidebarProps {
 
 export function Sidebar({ className = "" }: SidebarProps) {
   const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const navItems = [
     {
@@ -67,10 +71,20 @@ export function Sidebar({ className = "" }: SidebarProps) {
     },
   ];
 
-  return (
-    <aside
-      className={`w-64 border-r border-[#1F2533] bg-[#0A0C11] flex flex-col justify-between shrink-0 select-none ${className}`}
-    >
+  const handleNavClick = (href: string) => {
+    setMobileOpen(false);
+    // Scroll to hash target on same page
+    if (href.includes("#") && pathname === "/dashboard") {
+      const id = href.split("#")[1];
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  };
+
+  const sidebarContent = (
+    <>
       <div>
         {/* Brand / Logo */}
         <div className="h-16 px-6 flex items-center gap-3 border-b border-[#1F2533]/80">
@@ -85,6 +99,13 @@ export function Sidebar({ className = "" }: SidebarProps) {
               Merchant Core
             </span>
           </div>
+          {/* Mobile close button */}
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="ml-auto lg:hidden p-1.5 text-zinc-400 hover:text-zinc-200 rounded-lg hover:bg-[#151922] transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Navigation links */}
@@ -98,6 +119,7 @@ export function Sidebar({ className = "" }: SidebarProps) {
               <Link
                 key={item.name}
                 href={item.href}
+                onClick={() => handleNavClick(item.href)}
                 className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-all group ${
                   item.active
                     ? "bg-blue-600/10 text-blue-400 border border-blue-500/20"
@@ -152,6 +174,43 @@ export function Sidebar({ className = "" }: SidebarProps) {
           </Link>
         </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile hamburger trigger */}
+      <button
+        onClick={() => setMobileOpen(true)}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-[#0A0C11] border border-[#1F2533] rounded-lg text-zinc-400 hover:text-zinc-200 transition-colors"
+        aria-label="Open navigation"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile drawer */}
+      <aside
+        className={`lg:hidden fixed inset-y-0 left-0 z-50 w-64 border-r border-[#1F2533] bg-[#0A0C11] flex flex-col justify-between transition-transform duration-200 ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {sidebarContent}
+      </aside>
+
+      {/* Desktop sidebar */}
+      <aside
+        className={`w-64 border-r border-[#1F2533] bg-[#0A0C11] flex-col justify-between shrink-0 select-none hidden lg:flex ${className}`}
+      >
+        {sidebarContent}
+      </aside>
+    </>
   );
 }
