@@ -55,9 +55,52 @@ function renderInline(text: string): ReactNode[] {
 }
 
 /**
+ * Splits a table row by pipe delimiter, handling optional leading/trailing pipes and escaped pipes.
+ */
+function parseTableRow(line: string): string[] {
+  let trimmed = line.trim();
+  if (trimmed.startsWith("|")) trimmed = trimmed.slice(1);
+  if (trimmed.endsWith("|")) trimmed = trimmed.slice(0, -1);
+  // Mask escaped pipes
+  const masked = trimmed.replace(/\\\|/g, "__ESCAPED_PIPE__");
+  return masked
+    .split("|")
+    .map((cell) => cell.replace(/__ESCAPED_PIPE__/g, "|").trim());
+}
+
+/**
+ * Checks if a line is a markdown table separator row (e.g. | :--- | :---: | ---: |).
+ */
+function isTableSeparator(line: string): boolean {
+  const cells = parseTableRow(line);
+  if (cells.length < 2) return false;
+  return cells.every((cell) => /^:?-{2,}:?$/.test(cell));
+}
+
+/**
+ * Extracts column alignment ('left' | 'center' | 'right') from a table separator row.
+ */
+function parseAlignments(line: string): Array<"left" | "center" | "right"> {
+  const cells = parseTableRow(line);
+  return cells.map((cell) => {
+    const start = cell.startsWith(":");
+    const end = cell.endsWith(":");
+    if (start && end) return "center";
+    if (end) return "right";
+    return "left";
+  });
+}
+
+function getAlignmentClass(align?: "left" | "center" | "right"): string {
+  if (align === "center") return "text-center";
+  if (align === "right") return "text-right";
+  return "text-left";
+}
+
+/**
  * Dependency-free React Markdown renderer designed for Copilot responses.
  * Preserves headings, bold text, numbered lists, bullet lists, code blocks,
- * blockquotes, horizontal rules, and paragraphs.
+ * blockquotes, horizontal rules, tables, and paragraphs.
  */
 export function MarkdownRenderer({ content, className = "" }: MarkdownRendererProps) {
   if (!content) return null;
@@ -67,6 +110,11 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
   let inCodeBlock = false;
   let codeBlockLines: string[] = [];
   let currentList: { type: "ul" | "ol"; items: string[] } | null = null;
+  let currentTable: {
+    headers: string[];
+    alignments: Array<"left" | "center" | "right">;
+    rows: string[][];
+  } | null = null;
 
   const flushList = () => {
     if (!currentList) return;
@@ -98,6 +146,54 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
     currentList = null;
   };
 
+  const flushTable = () => {
+    if (!currentTable) return;
+    const { headers, alignments, rows } = currentTable;
+    elements.push(
+      <div
+        key={`table-${elements.length}`}
+        className="my-3 overflow-x-auto rounded-lg border border-white/[0.08] bg-[#0A0D15] max-w-full"
+      >
+        <table className="w-full text-xs border-collapse min-w-[500px]">
+          <thead>
+            <tr className="border-b border-white/[0.08] bg-white/[0.04]">
+              {headers.map((h, colIdx) => (
+                <th
+                  key={colIdx}
+                  className={`px-3.5 py-2 font-semibold text-zinc-200 font-mono text-[11px] whitespace-nowrap ${getAlignmentClass(
+                    alignments[colIdx]
+                  )}`}
+                >
+                  {renderInline(h)}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/[0.04]">
+            {rows.map((row, rowIdx) => (
+              <tr
+                key={rowIdx}
+                className="hover:bg-white/[0.02] transition-colors"
+              >
+                {row.map((cell, colIdx) => (
+                  <td
+                    key={colIdx}
+                    className={`px-3.5 py-2 text-zinc-300 text-xs ${getAlignmentClass(
+                      alignments[colIdx]
+                    )}`}
+                  >
+                    {renderInline(cell)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+    currentTable = null;
+  };
+
   for (let i = 0; i < lines.length; i++) {
     const rawLine = lines[i];
     const trimmed = rawLine.trim();
@@ -106,6 +202,7 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
     if (trimmed.startsWith("```")) {
       if (inCodeBlock) {
         flushList();
+        flushTable();
         elements.push(
           <pre
             key={`code-${elements.length}`}
@@ -118,6 +215,7 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
         inCodeBlock = false;
       } else {
         flushList();
+        flushTable();
         inCodeBlock = true;
       }
       continue;
@@ -131,19 +229,45 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
     // Blank line
     if (!trimmed) {
       flushList();
+      flushTable();
       continue;
     }
 
     // Horizontal rule
     if (trimmed === "---" || trimmed === "***" || trimmed === "___") {
       flushList();
+      flushTable();
       elements.push(<hr key={`hr-${elements.length}`} className="border-white/[0.08] my-3" />);
       continue;
+    }
+
+    // Check if current line starts a new table (header followed by separator)
+    if (!currentTable && trimmed.includes("|") && i + 1 < lines.length && isTableSeparator(lines[i + 1])) {
+      flushList();
+      const headers = parseTableRow(trimmed);
+      const alignments = parseAlignments(lines[i + 1]);
+      currentTable = { headers, alignments, rows: [] };
+      i++; // Skip separator line
+      continue;
+    }
+
+    // If currently inside a table
+    if (currentTable) {
+      if (trimmed.includes("|")) {
+        const cells = parseTableRow(trimmed);
+        if (cells.length > 0) {
+          currentTable.rows.push(cells);
+          continue;
+        }
+      }
+      // Line is not a table row -> flush table and continue parsing this line
+      flushTable();
     }
 
     // Headings
     if (trimmed.startsWith("#### ")) {
       flushList();
+      flushTable();
       elements.push(
         <h4
           key={`h4-${elements.length}`}
@@ -156,6 +280,7 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
     }
     if (trimmed.startsWith("### ")) {
       flushList();
+      flushTable();
       elements.push(
         <h3
           key={`h3-${elements.length}`}
@@ -168,6 +293,7 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
     }
     if (trimmed.startsWith("## ")) {
       flushList();
+      flushTable();
       elements.push(
         <h2
           key={`h2-${elements.length}`}
@@ -180,6 +306,7 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
     }
     if (trimmed.startsWith("# ")) {
       flushList();
+      flushTable();
       elements.push(
         <h1
           key={`h1-${elements.length}`}
@@ -194,6 +321,7 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
     // Blockquote
     if (trimmed.startsWith("> ")) {
       flushList();
+      flushTable();
       elements.push(
         <blockquote
           key={`bq-${elements.length}`}
@@ -208,6 +336,7 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
     // Unordered list item (- or *)
     const ulMatch = trimmed.match(/^[-*•]\s+(.*)$/);
     if (ulMatch) {
+      flushTable();
       if (!currentList || currentList.type !== "ul") {
         flushList();
         currentList = { type: "ul", items: [] };
@@ -219,6 +348,7 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
     // Ordered list item (1. or 1))
     const olMatch = trimmed.match(/^(\d+)[.)]\s+(.*)$/);
     if (olMatch) {
+      flushTable();
       if (!currentList || currentList.type !== "ol") {
         flushList();
         currentList = { type: "ol", items: [] };
@@ -229,6 +359,7 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
 
     // Regular paragraph
     flushList();
+    flushTable();
     elements.push(
       <p key={`p-${elements.length}`} className="text-xs text-zinc-200 leading-relaxed my-1.5">
         {renderInline(trimmed)}
@@ -237,6 +368,7 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
   }
 
   flushList();
+  flushTable();
 
   return <div className={`space-y-1 ${className}`}>{elements}</div>;
 }
