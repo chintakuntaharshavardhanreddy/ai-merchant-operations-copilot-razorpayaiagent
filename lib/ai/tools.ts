@@ -136,7 +136,7 @@ export function createMerchantTools(
           timestamp: t0,
           durationMs: Date.now() - t0,
           success: true,
-          summary: `Found ${payments.length} matching transactions`,
+          summary: `Found ${payments.length} matching transactions (₹${Math.round(payments.reduce((s, p) => s + Number(p.amount), 0)).toLocaleString("en-IN")} total volume)`,
         });
         return payments;
       },
@@ -161,13 +161,14 @@ export function createMerchantTools(
       execute: async (options) => {
         const t0 = Date.now();
         const analysis = await analyzeFailedPayments(options);
+        const timeLabel = options?.time_range ? ` (${options.time_range})` : "";
         onToolCall?.({
           toolName: "analyze_failed_payments",
           args: options || {},
           timestamp: t0,
           durationMs: Date.now() - t0,
           success: true,
-          summary: `${analysis.totalFailedCount} failures (₹${analysis.totalFailedAmount.toLocaleString("en-IN")}), ${analysis.highValueFailedPayments.length} high-value drops`,
+          summary: `${analysis.totalFailedCount} failures${timeLabel} (₹${analysis.totalFailedAmount.toLocaleString("en-IN")}), ${analysis.highValueFailedPayments.length} high-value drops`,
         });
         return analysis;
       },

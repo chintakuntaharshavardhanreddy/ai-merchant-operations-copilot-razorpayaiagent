@@ -655,7 +655,7 @@ export async function searchPayments(filters: {
   limit?: number;
 }): Promise<PaymentRecord[]> {
   const payments = await getAllPayments();
-  const now = Date.now();
+  const refTime = getTelemetryReferenceTime(payments);
   const limit = Math.min(filters.limit || 10, 25);
 
   let filtered = payments;
@@ -693,9 +693,15 @@ export async function searchPayments(filters: {
   if (filters.time_range) {
     const tr = filters.time_range.toLowerCase();
     if (tr === "today" || tr === "24h") {
-      filtered = filtered.filter((p) => now - new Date(p.created_at).getTime() <= 24 * 3600 * 1000);
+      filtered = filtered.filter((p) => {
+        const age = refTime - new Date(p.created_at).getTime();
+        return age >= 0 && age <= 24 * 3600 * 1000;
+      });
     } else if (tr === "7d") {
-      filtered = filtered.filter((p) => now - new Date(p.created_at).getTime() <= 7 * 24 * 3600 * 1000);
+      filtered = filtered.filter((p) => {
+        const age = refTime - new Date(p.created_at).getTime();
+        return age >= 0 && age <= 7 * 24 * 3600 * 1000;
+      });
     }
   }
 
@@ -733,11 +739,19 @@ export async function analyzeFailedPayments(options?: {
     failed = failed.filter((p) => p.method.toUpperCase() === options.method!.toUpperCase());
   }
 
-  const now = Date.now();
+  const refTime = getTelemetryReferenceTime(allPayments);
   if (options?.time_range) {
     const tr = options.time_range.toLowerCase();
     if (tr === "today" || tr === "24h") {
-      failed = failed.filter((p) => now - new Date(p.created_at).getTime() <= 24 * 3600 * 1000);
+      failed = failed.filter((p) => {
+        const age = refTime - new Date(p.created_at).getTime();
+        return age >= 0 && age <= 24 * 3600 * 1000;
+      });
+    } else if (tr === "7d") {
+      failed = failed.filter((p) => {
+        const age = refTime - new Date(p.created_at).getTime();
+        return age >= 0 && age <= 7 * 24 * 3600 * 1000;
+      });
     }
   }
 
@@ -777,12 +791,13 @@ export async function analyzeFailedPayments(options?: {
       failure_reason: p.failure_reason,
     }));
 
-  // Trend: last 12h vs prior 12h
-  const last12hFailures = failed.filter(
-    (p) => now - new Date(p.created_at).getTime() <= 12 * 3600 * 1000
-  ).length;
+  // Trend: last 12h vs prior 12h within the telemetry window
+  const last12hFailures = failed.filter((p) => {
+    const age = refTime - new Date(p.created_at).getTime();
+    return age >= 0 && age <= 12 * 3600 * 1000;
+  }).length;
   const prior12hFailures = failed.filter((p) => {
-    const age = now - new Date(p.created_at).getTime();
+    const age = refTime - new Date(p.created_at).getTime();
     return age > 12 * 3600 * 1000 && age <= 24 * 3600 * 1000;
   }).length;
 
@@ -1415,7 +1430,18 @@ export async function getRecentAgentActions(
     return [];
   }
 
-  return data.map((d) => ({
+  // Filter out any synthetic test audit records from operator views
+  const filtered = data.filter((d) => {
+    const t = (d.title || "").toLowerCase();
+    return (
+      !t.startsWith("audit_test_") &&
+      !t.startsWith("reject_test_") &&
+      !t.startsWith("persistence_verify_") &&
+      !t.includes("test recovery plan")
+    );
+  });
+
+  return filtered.map((d) => ({
     id: d.id,
     merchant_id: d.merchant_id || null,
     action_type: d.action_type as ActionType,

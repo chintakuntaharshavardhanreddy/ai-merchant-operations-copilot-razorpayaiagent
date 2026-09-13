@@ -322,7 +322,10 @@ async function verifyAll() {
   console.log("================================================================================");
   const allPassed = items.every((i) => i.passed);
   console.log(allPassed ? "🎉 ALL 12 REMOTE SUPABASE VERIFICATION CHECKS PASSED!" : "⚠️ SOME CHECKS REQUIRE ATTENTION.");
-  console.log("================================================================================\n");
+  // Clean up transient test record from agent_actions table
+  if (_adminSb && validActionId) {
+    await _adminSb.from("agent_actions").delete().eq("id", validActionId);
+  }
 
   return { items, allPassed, validActionId };
 }

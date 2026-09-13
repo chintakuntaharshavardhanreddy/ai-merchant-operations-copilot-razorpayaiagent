@@ -20,8 +20,6 @@ interface KPISectionProps {
 }
 
 export function KPISection({ metrics }: KPISectionProps) {
-  const successRateHealthy = metrics.successRate >= 95;
-  const successRateWarning = metrics.successRate >= 90 && metrics.successRate < 95;
   const failedVolume = metrics.failedVolume || 1124063;
   const grossPaymentVolume = metrics.totalRevenue + failedVolume;
 
@@ -41,17 +39,13 @@ export function KPISection({ metrics }: KPISectionProps) {
     {
       title: "Authorization Success Rate",
       value: `${metrics.successRate}%`,
-      exactValue: "Target benchmark: 95.0%",
-      subtitle: `${metrics.totalPayments - metrics.failedCount} successful txns`,
-      detail: `${(95 - metrics.successRate).toFixed(1)}% below target`,
-      statusLabel: successRateHealthy ? "On Target" : successRateWarning ? "Degraded" : "Critical",
-      statusClass: successRateHealthy
-        ? "text-emerald-400 bg-emerald-500/10"
-        : successRateWarning
-        ? "text-amber-400 bg-amber-500/10"
-        : "text-rose-400 bg-rose-500/10",
+      exactValue: `${metrics.totalPayments - metrics.failedCount} of ${metrics.totalPayments} captured`,
+      subtitle: `${metrics.totalPayments - metrics.failedCount} successful transactions`,
+      detail: `${metrics.failedCount} dropped attempts (${((metrics.failedCount / metrics.totalPayments) * 100).toFixed(1)}% drop rate)`,
+      statusLabel: "Captured Ratio",
+      statusClass: "text-emerald-400 bg-emerald-500/10",
       icon: CheckCircle2,
-      trendUp: successRateHealthy,
+      trendUp: true,
       href: "/dashboard/payments",
     },
     {

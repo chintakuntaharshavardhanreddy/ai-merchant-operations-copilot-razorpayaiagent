@@ -16,6 +16,7 @@ import { SuggestedQuestions } from "./SuggestedQuestions";
 import { SourceCitations, SourceCitation } from "./SourceCitations";
 import type { ActivityStep } from "./AIActivityPanel";
 import type { AgentActionRecord } from "@/lib/db/queries";
+import { MarkdownRenderer } from "./MarkdownRenderer";
 
 interface Message {
   id: string;
@@ -235,9 +236,13 @@ export function ChatInterface({ onTraceUpdate, onActionProposal, initialQuery }:
                       : "bg-[#121622] text-zinc-200 border border-[#1F273A] shadow-sm rounded-bl-sm space-y-2"
                   }`}
                 >
-                  <div className="whitespace-pre-wrap font-normal leading-relaxed">
-                    {msg.content}
-                  </div>
+                  {msg.role === "assistant" && !msg.isError ? (
+                    <MarkdownRenderer content={msg.content} />
+                  ) : (
+                    <div className="whitespace-pre-wrap font-normal leading-relaxed">
+                      {msg.content}
+                    </div>
+                  )}
 
                   {/* Action Proposal Banner */}
                   {msg.actionProposal && (
