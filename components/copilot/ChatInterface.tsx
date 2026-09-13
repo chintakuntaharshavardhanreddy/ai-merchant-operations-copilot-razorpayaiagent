@@ -177,10 +177,10 @@ export function ChatInterface({ onTraceUpdate, onActionProposal, initialQuery }:
             Autonomous Copilot Agent
           </span>
           <Badge variant="ai" size="sm">
-            Gemini 2.5
+            AI Agent Online
           </Badge>
           <Badge variant="neutral" size="sm">
-            Human-in-the-Loop
+            Operator Approval Enforced
           </Badge>
         </div>
         <span className="text-[11px] text-zinc-400 font-mono hidden sm:inline">

@@ -67,11 +67,11 @@ export function AgenticActionCard({
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-4 h-4 text-blue-400" />
             <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-              Agentic Action Guardrail
+              Operator Approval Guardrail
             </span>
           </div>
           <Badge variant="neutral" size="sm">
-            Human-in-the-Loop
+            Human Authorization
           </Badge>
         </CardHeader>
         <div className="p-4 text-center space-y-2">
@@ -199,7 +199,7 @@ export function AgenticActionCard({
               </Button>
             </div>
             <p className="text-[10px] text-center text-zinc-400">
-              Requires human confirmation before executing demo operational trigger
+              Requires explicit operator authorization prior to execution
             </p>
           </div>
         ) : isExecuted ? (

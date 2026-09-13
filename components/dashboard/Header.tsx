@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { Bell, Sparkles, Building2 } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
+import { Sparkles, Building2 } from "lucide-react";
 
 interface HeaderProps {
   title?: string;
@@ -12,52 +11,48 @@ export function Header({
   subtitle = "Real-time payment analytics, failure investigations & automated operations",
 }: HeaderProps) {
   return (
-    <header className="h-16 border-b border-[#1F2533] bg-[#090A0F]/80 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-20">
-      <div className="flex items-center space-x-4">
+    <header className="h-14 border-b border-white/[0.08] bg-[#090a0f] px-5 sm:px-6 flex items-center justify-between sticky top-0 z-20 shrink-0">
+      <div className="flex items-center space-x-3">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-base font-semibold text-zinc-100 tracking-tight">
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-sm font-semibold text-zinc-100 tracking-tight">
               {title}
             </h1>
-            <Badge variant="success" size="sm" dot>
-              AI Online
-            </Badge>
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono text-zinc-400 bg-zinc-900 border border-white/[0.06]">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              AI Agent Online
+            </span>
           </div>
           {subtitle && (
-            <p className="text-xs text-zinc-400 hidden sm:block">
+            <p className="text-[11px] text-zinc-400 hidden sm:block mt-0.5">
               {subtitle}
             </p>
           )}
         </div>
       </div>
 
-      <div className="flex items-center space-x-3">
-        {/* Merchant Account Picker */}
-        <div className="hidden md:flex items-center gap-2 bg-[#12161F] border border-[#202738] rounded-lg px-3 py-1.5 text-xs text-zinc-300">
+      <div className="flex items-center space-x-2.5">
+        {/* Merchant Workspace Context */}
+        <div className="hidden md:flex items-center gap-2 bg-[#0e121b] border border-white/[0.08] rounded-md px-2.5 py-1 text-xs text-zinc-300">
           <Building2 className="w-3.5 h-3.5 text-zinc-400" />
-          <span className="font-medium">Apex Retail Group</span>
-          <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.2 rounded border border-emerald-500/20 font-mono">
+          <span className="font-medium text-zinc-200">Apex Retail Group</span>
+          <span className="text-[10px] text-zinc-400 font-mono">
             LIVE
           </span>
         </div>
 
-        {/* Quick Link to Copilot */}
+        {/* Command Palette Trigger */}
         <Link
           href="/copilot"
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-400 bg-blue-500/10 hover:bg-blue-500/15 border border-blue-500/20 rounded-lg transition-colors"
+          className="flex items-center gap-2 px-2.5 py-1 text-xs text-zinc-400 hover:text-zinc-200 bg-[#0e121b] hover:bg-[#141a26] border border-white/[0.08] rounded-md transition-colors"
+          title="Open Copilot Terminal (⌘K)"
         >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Launch Copilot</span>
+          <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+          <span className="hidden sm:inline">Copilot</span>
+          <kbd className="text-[10px] font-mono text-zinc-400 bg-zinc-900 px-1 py-0.5 rounded border border-white/[0.08]">
+            ⌘K
+          </kbd>
         </Link>
-
-        {/* Notification Bell */}
-        <button
-          className="p-2 text-zinc-400 hover:text-zinc-200 hover:bg-[#151922] rounded-lg transition-colors border border-transparent hover:border-[#202738] relative"
-          aria-label="Notifications"
-        >
-          <Bell className="w-4 h-4" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-500 rounded-full ring-2 ring-[#090A0F]" />
-        </button>
       </div>
     </header>
   );

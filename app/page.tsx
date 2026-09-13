@@ -11,8 +11,12 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
+import { getDashboardMetrics } from "@/lib/db/queries";
 
-export default function LandingPage() {
+export const dynamic = "force-dynamic";
+
+export default async function LandingPage() {
+  const metrics = await getDashboardMetrics();
   const capabilities = [
     {
       title: "Understand payment performance",
@@ -138,23 +142,31 @@ export default function LandingPage() {
           {/* Quick Metrics Ribbon */}
           <div className="pt-10 grid grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl mx-auto text-left">
             <div className="p-4 rounded-xl bg-[#0D111A]/90 border border-[#1C2538]">
-              <span className="text-xs text-zinc-400 block">Total Revenue</span>
-              <span className="text-xl font-bold font-mono text-zinc-100">₹12.4L</span>
+              <span className="text-xs text-zinc-400 block">Settled Revenue</span>
+              <span className="text-xl font-bold font-mono text-zinc-100 tabular-nums">
+                ₹{Math.round(metrics.totalRevenue).toLocaleString("en-IN")}
+              </span>
               <span className="text-[11px] text-emerald-400 block mt-0.5">● Real-time settled</span>
             </div>
             <div className="p-4 rounded-xl bg-[#0D111A]/90 border border-[#1C2538]">
-              <span className="text-xs text-zinc-400 block">Payment Success Rate</span>
-              <span className="text-xl font-bold font-mono text-zinc-100">94.2%</span>
+              <span className="text-xs text-zinc-400 block">Success Rate</span>
+              <span className="text-xl font-bold font-mono text-zinc-100 tabular-nums">
+                {metrics.successRate.toFixed(1)}%
+              </span>
               <span className="text-[11px] text-amber-400 block mt-0.5">UPI degraded</span>
             </div>
             <div className="p-4 rounded-xl bg-[#0D111A]/90 border border-[#1C2538]">
               <span className="text-xs text-zinc-400 block">Failed Payments</span>
-              <span className="text-xl font-bold font-mono text-zinc-100">312</span>
+              <span className="text-xl font-bold font-mono text-zinc-100 tabular-nums">
+                {metrics.failedCount}
+              </span>
               <span className="text-[11px] text-rose-400 block mt-0.5">Investigation queued</span>
             </div>
             <div className="p-4 rounded-xl bg-[#0D111A]/90 border border-[#1C2538]">
               <span className="text-xs text-zinc-400 block">Revenue at Risk</span>
-              <span className="text-xl font-bold font-mono text-zinc-100">₹1.84L</span>
+              <span className="text-xl font-bold font-mono text-zinc-100 tabular-nums">
+                ₹{Math.round(metrics.revenueAtRisk).toLocaleString("en-IN")}
+              </span>
               <span className="text-[11px] text-blue-400 block mt-0.5">Recovery actionable</span>
             </div>
           </div>

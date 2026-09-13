@@ -45,6 +45,7 @@ export interface PeriodRevenueSummary {
   grossPaymentVolume: number;
   successRate: number;
   totalTransactions: number;
+  failedTransactions?: number;
   trendPercentage: number;
   grossTrendPercentage?: number;
   chartData: RevenueDataPoint[];
@@ -159,7 +160,7 @@ function getSyntheticFallbackData(): {
   return { customers: [], payments: [], refunds: [] };
 }
 
-async function getAllPayments(): Promise<PaymentRecord[]> {
+export async function getAllPayments(): Promise<PaymentRecord[]> {
   const sb = getSupabaseClient();
   if (sb) {
     try {
@@ -500,6 +501,7 @@ export async function getAllPeriodsRevenueData(): Promise<Record<PeriodKey, Peri
       grossPaymentVolume: Math.round(todayGross),
       successRate: todaySuccessRate,
       totalTransactions: todayPayments.length,
+      failedTransactions: todayPayments.length - todaySuccessCount,
       trendPercentage: todayTrend,
       grossTrendPercentage: todayGrossTrend,
       chartData: todayChartData,
@@ -513,6 +515,7 @@ export async function getAllPeriodsRevenueData(): Promise<Record<PeriodKey, Peri
       grossPaymentVolume: Math.round(sevenDaysGross),
       successRate: sevenDaysSuccessRate,
       totalTransactions: sevenDaysPayments.length,
+      failedTransactions: sevenDaysPayments.length - sevenDaysSuccessCount,
       trendPercentage: -15.4,
       chartData: sevenDaysChartData,
     },
@@ -525,6 +528,7 @@ export async function getAllPeriodsRevenueData(): Promise<Record<PeriodKey, Peri
       grossPaymentVolume: Math.round(allGross),
       successRate: allSuccessRate,
       totalTransactions: payments.length,
+      failedTransactions: payments.length - allSuccessCount,
       trendPercentage: -8.2,
       chartData: sevenDaysChartData,
     },
@@ -537,6 +541,7 @@ export async function getAllPeriodsRevenueData(): Promise<Record<PeriodKey, Peri
       grossPaymentVolume: Math.round(allGross),
       successRate: allSuccessRate,
       totalTransactions: payments.length,
+      failedTransactions: payments.length - allSuccessCount,
       trendPercentage: todayTrend,
       chartData: sevenDaysChartData,
     },
@@ -931,6 +936,11 @@ export async function getRefundMetrics(): Promise<{
     totalRefundAmount: analytics.totalRefundAmount,
     pendingRefunds: analytics.pendingRefundsCount,
   };
+}
+
+export async function getRefundRecords(limit: number = 50): Promise<RefundRecord[]> {
+  const all = await getAllRefunds();
+  return all.slice(0, limit);
 }
 
 export async function getCustomerPaymentFailures(minFailures: number = 2): Promise<

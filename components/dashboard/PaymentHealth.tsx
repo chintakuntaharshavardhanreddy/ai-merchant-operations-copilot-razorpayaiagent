@@ -79,29 +79,29 @@ interface PaymentHealthProps {
 
 export function PaymentHealth({ healthData }: PaymentHealthProps) {
   return (
-    <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/40 p-5 sm:p-6 backdrop-blur-sm space-y-5">
+    <div className="rounded-lg border border-white/[0.08] bg-[#0e121b] p-5 space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-zinc-800/60">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-white/[0.08]">
         <div>
-          <div className="flex items-center gap-2.5">
-            <h2 className="text-base font-semibold text-zinc-100 tracking-tight">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-zinc-100 tracking-tight">
               Payment Rail Health & Telemetry
             </h2>
-            <Activity className="w-4 h-4 text-emerald-400" />
+            <Activity className="w-3.5 h-3.5 text-blue-400" />
           </div>
-          <p className="text-xs text-zinc-400 mt-0.5">
+          <p className="text-[11px] text-zinc-400 mt-0.5">
             Real-time authorization reliability, volume distribution, and failure root causes per rail
           </p>
         </div>
-        <span className="text-[11px] font-mono text-zinc-400 self-start sm:self-auto px-2.5 py-1 rounded-full bg-zinc-950/60 border border-zinc-800/80">
-          {healthData.length} active rails monitored
+        <span className="text-[10px] font-mono text-zinc-400 self-start sm:self-auto px-2 py-0.5 rounded bg-zinc-900 border border-white/[0.06]">
+          {healthData.length} Active Rails Monitored
         </span>
       </div>
 
       {/* Rails Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         {healthData.length === 0 && (
-          <div className="col-span-full text-center text-zinc-400 text-sm py-12">
+          <div className="col-span-full text-center text-zinc-400 text-xs py-8">
             No payment rail telemetry available.
           </div>
         )}
@@ -117,18 +117,18 @@ export function PaymentHealth({ healthData }: PaymentHealthProps) {
           return (
             <div
               key={method.method}
-              className="rounded-xl bg-zinc-950/40 border border-zinc-800/60 p-4 space-y-3.5 hover:border-zinc-700/80 transition-all duration-150 flex flex-col justify-between"
+              className="rounded bg-[#090a0f] border border-white/[0.06] p-3.5 space-y-3 flex flex-col justify-between hover:border-white/[0.12] transition-colors"
             >
               <div>
                 {/* Rail Header */}
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-2 rounded-lg bg-zinc-900/80 border border-zinc-800/80 text-zinc-300">
-                      <Icon className="w-4 h-4" />
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded bg-zinc-900 border border-white/[0.06] text-zinc-300">
+                      <Icon className="w-3.5 h-3.5" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-semibold text-zinc-100">{meta.label}</h3>
-                      <span className="text-[11px] font-mono text-zinc-400">
+                      <h3 className="text-xs font-semibold text-zinc-100">{meta.label}</h3>
+                      <span className="text-[10px] font-mono text-zinc-400 tabular-nums">
                         {method.share}% volume share
                       </span>
                     </div>
@@ -136,24 +136,24 @@ export function PaymentHealth({ healthData }: PaymentHealthProps) {
                 </div>
 
                 {/* Severity Status Badge */}
-                <div className="mt-3">
+                <div className="mt-2.5">
                   <span
-                    className={`inline-flex items-center gap-1.5 text-[10px] font-medium font-mono px-2 py-0.5 rounded-full border ${severityInfo.badgeClass}`}
+                    className={`inline-flex items-center gap-1.5 text-[9px] font-medium font-mono px-1.5 py-0.2 rounded border ${severityInfo.badgeClass}`}
                   >
-                    <span className={`w-1.5 h-1.5 rounded-full ${severityInfo.dotClass}`} />
+                    <span className={`w-1 h-1 rounded-full ${severityInfo.dotClass}`} />
                     {severityInfo.label}
                   </span>
                 </div>
 
                 {/* Success Rate Bar */}
-                <div className="space-y-1.5 pt-3">
+                <div className="space-y-1 pt-2.5">
                   <div className="flex justify-between text-xs">
-                    <span className="text-zinc-400">Success Rate</span>
-                    <span className="font-mono font-semibold text-zinc-100">
+                    <span className="text-zinc-400 text-[11px]">Success Rate</span>
+                    <span className="font-mono font-semibold text-white tabular-nums">
                       {method.successRate}%
                     </span>
                   </div>
-                  <div className="w-full h-1.5 bg-zinc-800/80 rounded-full overflow-hidden">
+                  <div className="w-full h-1 bg-zinc-800 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-300 ${severityInfo.barClass}`}
                       style={{ width: `${Math.min(method.successRate, 100)}%` }}
@@ -162,18 +162,18 @@ export function PaymentHealth({ healthData }: PaymentHealthProps) {
                 </div>
 
                 {/* Volume & Failure Root Cause */}
-                <div className="pt-3 border-t border-zinc-800/60 space-y-1.5 text-xs">
-                  <div className="flex items-center justify-between text-zinc-400">
+                <div className="pt-2.5 border-t border-white/[0.04] space-y-1 text-xs">
+                  <div className="flex items-center justify-between text-zinc-400 text-[11px]">
                     <span>Failed Attempts:</span>
-                    <span className="font-mono font-medium text-rose-400">
+                    <span className="font-mono font-medium text-rose-400 tabular-nums">
                       {method.failedCount.toLocaleString("en-IN")} / {method.totalCount}
                     </span>
                   </div>
                   {method.topFailureReason && (
-                    <div className="flex items-start gap-1.5 text-[11px] text-zinc-400">
-                      <AlertCircle className="w-3.5 h-3.5 text-zinc-500 shrink-0 mt-0.5" />
+                    <div className="flex items-start gap-1 text-[10px] text-zinc-400">
+                      <AlertCircle className="w-3 h-3 text-zinc-400 shrink-0 mt-0.5" />
                       <span className="line-clamp-1">
-                        Primary: <span className="text-zinc-300 font-mono">{method.topFailureReason}</span>
+                        Primary: <span className="text-zinc-200 font-mono">{method.topFailureReason}</span>
                       </span>
                     </div>
                   )}
@@ -181,7 +181,7 @@ export function PaymentHealth({ healthData }: PaymentHealthProps) {
               </div>
 
               {/* Action Link: Investigate Rail */}
-              <div className="pt-2 border-t border-zinc-800/40">
+              <div className="pt-2 border-t border-white/[0.04]">
                 <Link
                   href={`/copilot?q=Analyze%20${method.method}%20rail%20degradation,%20failure%20codes,%20and%20remediation%20options`}
                   className="inline-flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300 transition-colors font-medium group"

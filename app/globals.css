@@ -3,11 +3,12 @@
 :root {
   --background: #090a0f;
   --foreground: #f3f4f6;
-  --surface: #0f1218;
-  --surface-raised: #151922;
-  --surface-border: #232a3b;
-  --border: #1f2533;
-  --accent-blue: #3b82f6;
+  --surface-canvas: #090a0f;
+  --surface-panel: #0e121b;
+  --surface-elevated: #141a26;
+  --border-hairline: rgba(255, 255, 255, 0.08);
+  --border-panel: rgba(255, 255, 255, 0.12);
+  --accent-razorpay: #2563eb;
   --accent-emerald: #10b981;
   --accent-amber: #f59e0b;
   --accent-rose: #f43f5e;
@@ -21,34 +22,26 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Enforce tabular digits for financial figures */
+.tabular-nums {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
 /* Custom subtle scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0b0d13;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1f2536;
+  background: rgba(255, 255, 255, 0.12);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2e384d;
-}
-
-/* Subtle fintech grid pattern */
-.fintech-grid {
-  background-size: 32px 32px;
-  background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-}
-
-/* Subtle glow */
-.fintech-glow {
-  box-shadow: 0 0 50px -12px rgba(59, 130, 246, 0.08);
+  background: rgba(255, 255, 255, 0.2);
 }

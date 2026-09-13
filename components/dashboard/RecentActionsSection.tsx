@@ -80,21 +80,21 @@ export function RecentActionsSection({ actions: initialActions }: RecentActionsS
   };
 
   return (
-    <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/40 p-5 sm:p-6 backdrop-blur-sm space-y-6">
+    <div className="rounded-lg border border-white/[0.08] bg-[#0e121b] p-5 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-zinc-800/60 gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-white/[0.08] gap-3">
         <div>
           <div className="flex items-center gap-2.5">
-            <h2 className="text-base font-semibold text-zinc-100 tracking-tight">
-              AI Action Proposals & Audit Trail
+            <h2 className="text-sm font-semibold text-zinc-100 tracking-tight">
+              Operator Approval Queue & Audit Trail
             </h2>
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
               <ShieldCheck className="w-3 h-3 text-emerald-400" />
-              Human-in-the-Loop
+              Operator Approval Required
             </span>
           </div>
           <p className="text-xs text-zinc-400 mt-0.5">
-            Cryptographically audited operational proposals requiring explicit merchant operator approval
+            Operational action proposals requiring explicit human authorization prior to execution
           </p>
         </div>
 
